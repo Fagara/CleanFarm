@@ -33,5 +33,8 @@ namespace CleanFarm
 
         /// <summary>Should we remove all large rock resource clumps.</summary>
         public bool RemoveLargeRocks { get; set; } = true;
+
+        /// <summary>Should we print the name of each item that was removed and how many of that type were removed in the console.</summary>
+        public bool ReportRemovedItemsToConsole { get; set; } = true;
     }
 }

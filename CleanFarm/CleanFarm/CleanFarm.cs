@@ -51,6 +51,7 @@ namespace CleanFarm
 
         private void OnNewDay(object sender, EventArgsNewDay e)
         {
+            // Do it once the day has finished transitioning.
             if (!e.IsNewDay)
             {
                 Clean();
@@ -65,17 +66,20 @@ namespace CleanFarm
 
             this.Monitor.Log("Cleaning up the farm!");
 
+            // Used to store the unique item name and the amount of it that was removed.
+            var removedItems = new Dictionary<string, int>();
+
+            // TODO: create a class for each of these types to remove to reduce duplication.
             // Objects to remove
             if (this.ObjectsToRemove.Count > 0)
             {
                 // Remove objects we don't want
                 var objectsToRemove = farm.objects
                     .Where(pair => ShouldRemoveItem(pair.Value.Name))
-                    .Select(pair => pair.Key)
+                    .Select(pair => pair)
                     .ToList();
 
-                foreach (var o in objectsToRemove)
-                    farm.objects.Remove(o);
+                RemoveAndRecordItem(farm.objects, objectsToRemove, removedItems, item => item.Value.Name);
             }
 
             // Resource clumps
@@ -86,8 +90,7 @@ namespace CleanFarm
                     .Select(clump => clump)
                     .ToList();
 
-                foreach (var clump in clumps)
-                    farm.resourceClumps.Remove(clump);
+                RemoveAndRecordItem(farm.resourceClumps, clumps, removedItems, GetResourceClumpName);
             }
 
             // Saplings
@@ -95,12 +98,22 @@ namespace CleanFarm
             {
                 var terrainToRemove = farm.terrainFeatures
                     .Where(pair => ShouldRemoveTerrain(pair.Value))
-                    .Select(pair => pair.Key)
+                    .Select(pair => pair)
                     .ToList();
 
-                foreach (var terrain in terrainToRemove)
-                    farm.terrainFeatures.Remove(terrain);
+                RemoveAndRecordItem(farm.terrainFeatures, terrainToRemove, removedItems, item => GetTerrainFeatureName(item.Value));
             }
+
+            // Report what was removed
+            if (this.Config.ReportRemovedItemsToConsole)
+            {
+                foreach (var removed in removedItems)
+                {
+                    // Pluralize if needed
+                    this.Monitor.Log($"Removed {removed.Value} {(removed.Value > 1 && !removed.Key.EndsWith("s") ? removed.Key + "s" : removed.Key)}");
+                }
+            }
+            this.Monitor.Log(removedItems.Count > 0 ? "Cleanup complete!" : "Nothing to remove.");
         }
 
         private bool ShouldRemoveItem(string name)
@@ -124,6 +137,33 @@ namespace CleanFarm
             int type = clump.parentSheetIndex;
             return ((this.Config.RemoveLargeRocks && type == ResourceClump.boulderIndex) ||
                     this.Config.RemoveLargeLogs && (type == ResourceClump.hollowLogIndex || type == ResourceClump.stumpIndex));
+        }
+
+        // TODO: maybe create GetName extension methods for all these types?
+        private string GetResourceClumpName(ResourceClump clump)
+        {
+            if (clump.parentSheetIndex == ResourceClump.boulderIndex) return "Boulder";
+            if (clump.parentSheetIndex == ResourceClump.hollowLogIndex) return "Hollow Log";
+            if (clump.parentSheetIndex == ResourceClump.stumpIndex) return "Stump";
+            if (clump.parentSheetIndex == ResourceClump.meteoriteIndex) return "Meteorite";
+            return clump.GetType().ToString();
+        }
+
+        private string GetTerrainFeatureName(TerrainFeature feature)
+        {
+            return feature is Tree 
+                ? "Tree" 
+                : feature.ToString();
+        }
+
+        private void RemoveAndRecordItem<T>(ICollection<T> collection, ICollection<T> toRemove, Dictionary<string, int> removedItems, Func<T, string> getNameFunc)
+        {
+            foreach (var item in toRemove)
+            {
+                var itemName = getNameFunc(item);
+                removedItems[itemName] = removedItems.ContainsKey(itemName) ? removedItems[itemName] + 1 : 1;
+                collection.Remove(item);
+            }
         }
     }
 }
