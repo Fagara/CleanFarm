@@ -26,7 +26,7 @@ namespace CleanFarm
             this.ObjectsToRemove = new List<string>();
             if (this.Config.RemoveStones) this.ObjectsToRemove.Add("stone");
             if (this.Config.RemoveTwigs) this.ObjectsToRemove.Add("twig");
-            if (this.Config.RemoveWeeds) this.ObjectsToRemove.Add("weed");
+            if (this.Config.RemoveWeeds) this.ObjectsToRemove.Add("weeds");
 
             // Validate the growth stage
             this.MaxGrowthStage = (int)MathHelper.Clamp(this.Config.MaxTreeGrowthStageToAllow, Tree.sproutStage, Tree.treeStage);
@@ -105,10 +105,7 @@ namespace CleanFarm
 
         private bool ShouldRemoveItem(string name)
         {
-            foreach (var n in this.ObjectsToRemove)
-                if (name.ToLower().Contains(n.ToLower()))
-                    return true;
-            return false;
+            return this.ObjectsToRemove.Contains(name.ToLower());
         }
 
         private bool ShouldRemoveTerrain(TerrainFeature feature)
@@ -119,7 +116,6 @@ namespace CleanFarm
                 return (tree.growthStage < this.MaxGrowthStage ||
                         (tree.stump && this.Config.RemoveStumps));
             }
-
             return (feature is Grass && this.Config.RemoveGrass);
         }
 
