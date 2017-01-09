@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewValley;
 using StardewModdingAPI;
-using System.Data.Entity.Design.PluralizationServices;
-using System.Globalization;
 
 namespace CleanFarm.CleanTasks
 {
@@ -49,11 +47,7 @@ namespace CleanFarm.CleanTasks
                 monitor.Log($"Running {this.GetType().Name}...");
 
                 foreach (var removed in this.RemovedItems)
-                {
-                    // Pluralize if needed
-                    string removedName = FormatRemovedItemName(removed.Key, removed.Value);
-                    monitor.Log($"  Removed {removed.Value} {removedName}");
-                }
+                    monitor.Log($"  Removed: {removed.Key} x{removed.Value}");
 
                 if (this.RemovedItems.Count == 0)
                     monitor.Log("No items to remove.");
@@ -61,19 +55,6 @@ namespace CleanFarm.CleanTasks
                 // Clear the items once they have been reported so they aren't reported again.
                 this.RemovedItems.Clear();
             }
-        }
-
-        /// <summary>Formats the name of the removed item for printing.</summary>
-        /// <param name="name">The name of the item.</param>
-        /// <param name="amount">The amount of the item being removed.</param>
-        /// <returns>The formatted name.</returns>
-        protected virtual string FormatRemovedItemName(string name, int amount)
-        {
-            // TODO: use proper pluralization lib
-            var ps = PluralizationService.CreateService(CultureInfo.GetCultureInfo("en-us"));
-            return amount > 1
-                ? ps.Pluralize(name)
-                : name;
         }
 
         /// <summary>Checks if an item meets the criteria to be removed from the farm. This is passed to a 'Where' query in RemoveAndRecordItems.</summary>
