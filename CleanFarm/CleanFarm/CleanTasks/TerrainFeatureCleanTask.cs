@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using StardewValley;
 using StardewValley.TerrainFeatures;
+using System.Collections.Generic;
 
 namespace CleanFarm.CleanTasks
 {
@@ -10,18 +11,23 @@ namespace CleanFarm.CleanTasks
         /// <summary>The max growth stage of trees to allow. All trees below this stage are removed.</summary>
         private int MaxGrowthStage = Tree.saplingStage;
 
+        /// <summary>The names of the growth stages indexed by the growth stage. Used to lookup the tree name.</summary>
+        private List<string> GrowthStageNames;
+
         /// <summary>Creats an instance of the clean task.</summary>
         /// <param name="config">The config object for this mod.</param>
         public TerrainFeatureCleanTask(ModConfig config)
             : base(config)
         {
             this.MaxGrowthStage = (int)MathHelper.Clamp(config.MaxTreeGrowthStageToAllow, Tree.sproutStage, Tree.treeStage);
+
+            this.GrowthStageNames = new List<string>() { "Tree Seed", "Tree Sprout", "Tree Sapling", "Tree Bush", "Small Tree" };
         }
 
         /// <summary>Can this task be run. Usually checks the config settings to see if it's enabled.</summary>
         public override bool CanRun()
         {
-            return this.Config.RemoveSaplings || this.Config.RemoveGrass;
+            return this.Config.RemoveSaplings || this.Config.RemoveGrass || this.Config.RemoveStumps;
         }
 
         /// <summary>Runs the clean task.</summary>
@@ -31,24 +37,45 @@ namespace CleanFarm.CleanTasks
             RemoveAndRecordItems(farm.terrainFeatures, pair => pair.Value);
         }
 
+        /// <summary>Restores all removed items for debug purposes.</summary>
+        /// <param name="farm">The farm to restore the items to.</param>
+        public override void RestoreRemovedItems(Farm farm)
+        {
+            RestoreItems(farm.terrainFeatures);
+        }
+
         /// <summary>Gets the human readable name of an item. Used for reporting the item.</summary>
         /// <param name="item">The item whose name to get.</param>
         protected override string GetItemName(TerrainFeature item)
         {
-            return item is Tree
-                ? "Tree"
-                : item.ToString();
+            if (item is Tree)
+            {
+                var tree = item as Tree;
+                if (tree.stump)
+                    return "Tree Stump";
+
+                // Use the name of the growth stage if valid.
+                return tree.growthStage >= 0 && tree.growthStage < this.GrowthStageNames.Count 
+                    ? this.GrowthStageNames[tree.growthStage] 
+                    : "Tree";
+            }
+
+            if (item is Grass)
+                return "Grass";
+
+            // Default
+            return item.ToString();
         }
 
         /// <summary>Checks if an item meets the criteria to be removed from the farm. This is passed to a 'Where' query in RemoveAndRecordItems.</summary>
         /// <param name="item">The item in question.</param>
         protected override bool ShouldRemoveItem(TerrainFeature item)
         {
-            if (item is Tree && this.Config.RemoveSaplings)
+            if (item is Tree)
             {
                 var tree = item as Tree;
-                return (tree.growthStage < this.MaxGrowthStage ||
-                        (tree.stump && this.Config.RemoveStumps));
+                return ((this.Config.RemoveSaplings && tree.growthStage < this.MaxGrowthStage) ||
+                        (this.Config.RemoveStumps && tree.stump));
             }
             return (item is Grass && this.Config.RemoveGrass);
         }

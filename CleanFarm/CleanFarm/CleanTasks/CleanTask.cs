@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewValley;
 using StardewModdingAPI;
+using System.Data.Entity.Design.PluralizationServices;
+using System.Globalization;
 
 namespace CleanFarm.CleanTasks
 {
@@ -16,6 +18,8 @@ namespace CleanFarm.CleanTasks
         /// <summary>The items that have been removed by this task when Run is called. Maps GetItemName to the number of instances that were removed.</summary>
         protected Dictionary<string, int> RemovedItems { get; private set; }
 
+        /// <summary>The instances of the removed items. Used for restoring for debug purposes.</summary>
+        protected object RemovedItemInstances { get; private set; }
 
         /// <summary>Creats an instance of the clean task.</summary>
         /// <param name="config">The config object for this mod.</param>
@@ -32,21 +36,23 @@ namespace CleanFarm.CleanTasks
         /// <param name="farm">The farm to be cleaned.</param>
         public abstract void Run(Farm farm);
 
+        /// <summary>Restores all removed items for debug purposes.</summary>
+        /// <param name="farm">The farm to restore the items to.</param>
+        public abstract void RestoreRemovedItems(Farm farm);
+
         /// <summary>Prints to the console all the items that were removed in a nice format. Only runs if the config option is enabled.</summary>
         /// <param name="monitor">The monitor interface to access the log method from.</param>
         public void ReportRemovedItems(IMonitor monitor)
         {
             if (this.Config.ReportRemovedItemsToConsole)
             {
-                monitor.Log($"Running task {this.GetType().Name}");
+                monitor.Log($"Running {this.GetType().Name}...");
 
                 foreach (var removed in this.RemovedItems)
                 {
                     // Pluralize if needed
-                    string removedName = removed.Value > 1 && !removed.Key.EndsWith("s") 
-                        ? removed.Key + "s" 
-                        : removed.Key;
-                    monitor.Log($"Removed {removed.Value} {removedName}");
+                    string removedName = FormatRemovedItemName(removed.Key, removed.Value);
+                    monitor.Log($"  Removed {removed.Value} {removedName}");
                 }
 
                 if (this.RemovedItems.Count == 0)
@@ -55,6 +61,19 @@ namespace CleanFarm.CleanTasks
                 // Clear the items once they have been reported so they aren't reported again.
                 this.RemovedItems.Clear();
             }
+        }
+
+        /// <summary>Formats the name of the removed item for printing.</summary>
+        /// <param name="name">The name of the item.</param>
+        /// <param name="amount">The amount of the item being removed.</param>
+        /// <returns>The formatted name.</returns>
+        protected virtual string FormatRemovedItemName(string name, int amount)
+        {
+            // TODO: use proper pluralization lib
+            var ps = PluralizationService.CreateService(CultureInfo.GetCultureInfo("en-us"));
+            return amount > 1
+                ? ps.Pluralize(name)
+                : name;
         }
 
         /// <summary>Checks if an item meets the criteria to be removed from the farm. This is passed to a 'Where' query in RemoveAndRecordItems.</summary>
@@ -77,6 +96,11 @@ namespace CleanFarm.CleanTasks
                 .Select(item => item)
                 .ToList();
 
+        #if DEBUG
+            // Track items that are removed in debug so we can restore them if needed.
+            this.RemovedItemInstances = toRemove;
+        #endif
+
             // Make sure the list is empty first.
             this.RemovedItems.Clear();
 
@@ -95,6 +119,21 @@ namespace CleanFarm.CleanTasks
                 // Remove the item from the native collection.
                 collection.Remove(item);
             }
+        }
+
+        /// <summary>Adds the removedItemInstances to the nativeCollection.</summary>
+        /// <typeparam name="T">The native collection type.</typeparam>
+        /// <param name="nativeCollection">The native collection to add the removed items to.</param>
+        protected void RestoreItems<T>(ICollection<T> nativeCollection)
+        {
+            if (this.RemovedItemInstances == null)
+                return;
+
+            var collection = (ICollection<T>)this.RemovedItemInstances;
+            foreach (var element in collection)
+                nativeCollection.Add(element);
+
+            collection.Clear();
         }
     }
 }

@@ -16,36 +16,32 @@ namespace CleanFarm
         /// <summary>The clean tasks to run.</summary>
         private List<ICleanTask> CleanTasks;
 
+        /// <summary>Gets the farm location.</summary>
+        private Farm PlayerFarm => Game1.locations.Find(loc => loc is Farm) as Farm;
+
 
         /// <summary>Mod entry point.</summary>
         /// <param name="helper">Mod helper interface.</param>
         public override void Entry(IModHelper helper)
         {
             this.Config = helper.ReadConfig<ModConfig>();
-
-            this.CleanTasks = new List<ICleanTask>()
-            {
-                new ObjectCleanTask(this.Config),
-                new ResourceClumpCleanTask(this.Config),
-                new TerrainFeatureCleanTask(this.Config)
-            };
+            InitTasks(this.Config);
 
             TimeEvents.OnNewDay += OnNewDay;
 
-        #if DEBUG
-            ControlEvents.KeyPressed += ControlEvents_KeyPressed;
-        #endif
+            InitDebugCommands(helper);
         }
 
-        /// <summary>Used for manually running the clean tasks for debugging.</summary>
-        private void ControlEvents_KeyPressed(object sender, EventArgsKeyPressed e)
+        /// <summary>Creates the clean tasks. This is just it isn't duplicated for the debug command.</summary>
+        /// <param name="config">Mod config object.</param>
+        private void InitTasks(ModConfig config)
         {
-        #if DEBUG
-            if (e.KeyPressed == Keys.V)
+            this.CleanTasks = new List<ICleanTask>()
             {
-                Clean();
-            }
-        #endif
+                new ObjectCleanTask(config),
+                new ResourceClumpCleanTask(config),
+                new TerrainFeatureCleanTask(config)
+            };
         }
 
         /// <summary>Callback for the OnNewDay event. Runs the clean once the day has finished transitioning.</summary>
@@ -61,19 +57,22 @@ namespace CleanFarm
         /// <summary>Runs the clean tasks.</summary>
         private void Clean()
         {
-            var farm = Game1.locations.Find(loc => loc is Farm) as Farm;
-            if (farm == null)
+            if (this.PlayerFarm == null)
+            {
+                this.Monitor.Log("Cannot clean farm: farm location is invalid.", LogLevel.Warn);
                 return;
+            }
 
             this.Monitor.Log("Cleaning up the farm...");
 
+            // Run the tasks
             foreach (ICleanTask cleanTask in this.CleanTasks)
             {
                 if (!cleanTask.CanRun())
                     continue;
                 try
                 {
-                    cleanTask.Run(farm);
+                    cleanTask.Run(this.PlayerFarm);
                     cleanTask.ReportRemovedItems(this.Monitor);
                 }
                 catch (Exception ex)
@@ -84,5 +83,50 @@ namespace CleanFarm
 
             this.Monitor.Log("Cleanup complete!");
         }
+
+        #region DebugCommands
+        private void InitDebugCommands(IModHelper helper)
+        {
+        #if DEBUG
+            // Manually run the clean
+            ControlEvents.KeyPressed += (sender, e) =>
+            {
+                if (e.KeyPressed == Keys.V)
+                    Clean();
+            };
+
+            // Convenience for testing only with command line
+            Command.RegisterCommand("cf_clean", "Manually runs the clean.").CommandFired += (sender, e) => Clean();
+
+            Command.RegisterCommand("cf_restore", "Restores the items removed from the farm.").CommandFired += (sender, e) =>
+            {
+                this.Monitor.Log("Restoring removed items", LogLevel.Trace);
+                if (this.PlayerFarm == null)
+                {
+                    this.Monitor.Log("Farm is invalid", LogLevel.Error);
+                    return;
+                }
+
+                try
+                {
+                    foreach (var task in this.CleanTasks)
+                        task.RestoreRemovedItems(this.PlayerFarm);
+                }
+                catch (Exception ex)
+                {
+                    this.Monitor.Log($"Error while trying to restore items: {ex}", LogLevel.Error);
+                }
+            };
+
+            // Reloads config and re-creates tasks. Used for quickly testing different config settings without restarting.
+            Command.RegisterCommand("cf_reload", "Reloads the config.").CommandFired += (sender, e) =>
+            {
+                this.Monitor.Log("Reloading config", LogLevel.Trace);
+                this.Config = helper.ReadConfig<ModConfig>();
+                InitTasks(this.Config);
+            };
+        #endif // DEBUG
+        }
+        #endregion DebugCommands
     }
 }

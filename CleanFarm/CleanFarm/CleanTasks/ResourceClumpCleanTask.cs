@@ -1,5 +1,6 @@
 ﻿using StardewValley;
 using StardewValley.TerrainFeatures;
+using System.Collections.Generic;
 
 namespace CleanFarm.CleanTasks
 {
@@ -26,13 +27,20 @@ namespace CleanFarm.CleanTasks
             RemoveAndRecordItems(farm.resourceClumps, item => item);
         }
 
+        /// <summary>Restores all removed items for debug purposes.</summary>
+        /// <param name="farm">The farm to restore the items to.</param>
+        public override void RestoreRemovedItems(Farm farm)
+        {
+            RestoreItems(farm.resourceClumps);
+        }
+
         /// <summary>Gets the human readable name of an item. Used for reporting the item.</summary>
         /// <param name="item">The item whose name to get.</param>
         protected override string GetItemName(ResourceClump item)
         {
             if (item.parentSheetIndex == ResourceClump.boulderIndex)    return "Boulder";
             if (item.parentSheetIndex == ResourceClump.hollowLogIndex)  return "Hollow Log";
-            if (item.parentSheetIndex == ResourceClump.stumpIndex)      return "Stump";
+            if (item.parentSheetIndex == ResourceClump.stumpIndex)      return "Large Stump";
             if (item.parentSheetIndex == ResourceClump.meteoriteIndex)  return "Meteorite";
             return item.GetType().ToString();
         }

@@ -17,5 +17,9 @@ namespace CleanFarm.CleanTasks
         /// <summary>Prints to the console all the items that were removed in a nice format.</summary>
         /// <param name="monitor">The monitor interface to access the log method from.</param>
         void ReportRemovedItems(IMonitor monitor);
+
+        /// <summary>Restores all removed items for debug purposes.</summary>
+        /// <param name="farm">The farm to restore the items to.</param>
+        void RestoreRemovedItems(Farm farm);
     }
 }

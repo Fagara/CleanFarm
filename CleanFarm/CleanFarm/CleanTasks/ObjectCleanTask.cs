@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using StardewValley;
 using SDVObject = StardewValley.Object;
+using Microsoft.Xna.Framework;
 
 namespace CleanFarm.CleanTasks
 {
@@ -36,6 +37,13 @@ namespace CleanFarm.CleanTasks
         public override void Run(Farm farm)
         {
             RemoveAndRecordItems(farm.objects, pair => pair.Value);
+        }
+
+        /// <summary>Restores all removed items for debug purposes.</summary>
+        /// <param name="farm">The farm to restore the items to.</param>
+        public override void RestoreRemovedItems(Farm farm)
+        {
+            RestoreItems(farm.objects);
         }
 
         /// <summary>Gets the human readable name of an item. Used for reporting the item.</summary>
