@@ -27,7 +27,7 @@ namespace CleanFarm
             this.Config = helper.ReadConfig<ModConfig>();
             InitTasks(this.Config);
 
-            TimeEvents.OnNewDay += OnNewDay;
+            TimeEvents.DayOfMonthChanged += OnNewDay;
 
             InitDebugCommands(helper);
         }
@@ -47,11 +47,9 @@ namespace CleanFarm
         /// <summary>Callback for the OnNewDay event. Runs the clean once the day has finished transitioning.</summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void OnNewDay(object sender, EventArgsNewDay e)
+        private void OnNewDay(object sender, EventArgsIntChanged e)
         {
-            // Do it once the day has finished transitioning.
-            if (!e.IsNewDay)
-                Clean();
+            Clean();
         }
 
         /// <summary>Runs the clean tasks.</summary>
