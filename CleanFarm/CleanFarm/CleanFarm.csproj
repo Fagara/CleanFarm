@@ -49,6 +49,7 @@
     <Compile Include="CleanFarm.cs" />
     <Compile Include="CleanTasks\CleanTask.cs" />
     <Compile Include="CleanTasks\ICleanTask.cs" />
+    <Compile Include="CleanTasks\LargeTerrainFeatureCleanTask.cs" />
     <Compile Include="CleanTasks\ObjectCleanTask.cs" />
     <Compile Include="CleanTasks\ResourceClumpCleanTask.cs" />
     <Compile Include="CleanTasks\TerrainFeatureCleanTask.cs" />

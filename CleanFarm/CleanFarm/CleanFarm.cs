@@ -40,7 +40,8 @@ namespace CleanFarm
             {
                 new ObjectCleanTask(config),
                 new ResourceClumpCleanTask(config),
-                new TerrainFeatureCleanTask(config)
+                new TerrainFeatureCleanTask(config),
+                new LargeTerrainFeatureCleanTask(config)
             };
         }
 
