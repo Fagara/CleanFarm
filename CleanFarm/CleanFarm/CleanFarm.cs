@@ -27,7 +27,7 @@ namespace CleanFarm
             this.Config = helper.ReadConfig<ModConfig>();
             InitTasks(this.Config);
 
-            TimeEvents.DayOfMonthChanged += OnNewDay;
+            TimeEvents.AfterDayStarted += OnNewDay;
 
             InitDebugCommands(helper);
         }
@@ -47,7 +47,7 @@ namespace CleanFarm
         /// <summary>Callback for the OnNewDay event. Runs the clean once the day has finished transitioning.</summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void OnNewDay(object sender, EventArgsIntChanged e)
+        private void OnNewDay(object sender, EventArgs e)
         {
             Clean();
         }
@@ -94,9 +94,9 @@ namespace CleanFarm
             };
 
             // Convenience for testing only with command line
-            Command.RegisterCommand("cf_clean", "Manually runs the clean.").CommandFired += (sender, e) => Clean();
+            helper.ConsoleCommands.Add("cf_clean", "Manually runs the clean.", (name, args) => Clean());
 
-            Command.RegisterCommand("cf_restore", "Restores the items removed from the farm.").CommandFired += (sender, e) =>
+            helper.ConsoleCommands.Add("cf_restore", "Restores the items removed from the farm.", (sender, e) =>
             {
                 this.Monitor.Log("Restoring removed items", LogLevel.Trace);
                 if (this.PlayerFarm == null)
@@ -114,15 +114,15 @@ namespace CleanFarm
                 {
                     this.Monitor.Log($"Error while trying to restore items: {ex}", LogLevel.Error);
                 }
-            };
+            });
 
             // Reloads config and re-creates tasks. Used for quickly testing different config settings without restarting.
-            Command.RegisterCommand("cf_reload", "Reloads the config.").CommandFired += (sender, e) =>
+            helper.ConsoleCommands.Add("cf_reload", "Reloads the config.", (sender, e) =>
             {
                 this.Monitor.Log("Reloading config", LogLevel.Trace);
                 this.Config = helper.ReadConfig<ModConfig>();
                 InitTasks(this.Config);
-            };
+            });
         #endif // DEBUG
         }
         #endregion DebugCommands
