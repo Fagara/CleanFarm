@@ -20,6 +20,7 @@ namespace CleanFarm.CleanTasks
 
         /// <summary>Restores all removed items for debug purposes.</summary>
         /// <param name="farm">The farm to restore the items to.</param>
-        void RestoreRemovedItems(Farm farm);
+        /// <returns>The number of items that were restored.</returns>
+        int RestoreRemovedItems(Farm farm);
     }
 }

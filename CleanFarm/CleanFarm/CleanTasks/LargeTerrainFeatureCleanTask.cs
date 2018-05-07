@@ -30,9 +30,10 @@ namespace CleanFarm.CleanTasks
 
         /// <summary>Restores all removed items for debug purposes.</summary>
         /// <param name="farm">The farm to restore the items to.</param>
-        public override void RestoreRemovedItems(Farm farm)
+        /// <returns>The number of items that were restored.</returns>
+        public override int RestoreRemovedItems(Farm farm)
         {
-            RestoreItems(farm.largeTerrainFeatures);
+            return RestoreItems(farm.largeTerrainFeatures);
         }
 
         /// <summary>Gets the human readable name of an item. Used for reporting the item.</summary>

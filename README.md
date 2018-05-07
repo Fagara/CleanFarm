@@ -5,19 +5,10 @@ On each new day this mod will remove all debris and other items from the farm th
 
 **Warning: It may be a good idea to back up your save game as your farm is saved after the items have been removed.**
 
-
-## Requirements
-
-This mod works with the most recent version of Stardew Valley (last tested with 1.1).
-
-This mod requires [SMAPI](https://github.com/ClxS/SMAPI) __1.0 or higher to run__.
-
-For instructions on installing SMAPI view [this help page](http://canimod.com/guides/using-mods#installing-smapi).
-
-## Installation
-
-1. Download the latest release [here](https://github.com/tstaples/CleanFarm/releases).
-2. Unzip the contents into your Mods folder which is located in the same directory as your Stardew Valley.exe and StardewValleyModdingAPI.exe.
+## Install
+1. [Install the latest version of SMAPI](https://smapi.io/).
+2. [Install this mod from Nexus mods](http://www.nexusmods.com/stardewvalley/mods/794/).
+3. Run the game using SMAPI.
 
 To uninstall this mod you can simply delete the "CleanFarm" folder from your Mods directory.
 
@@ -35,7 +26,9 @@ In this mod's `config.json` file you will find options to enable/disable which o
   "RemoveSaplings": true,
   "MaxTreeGrowthStageToAllow": 5, // min 1, max 5
   "RemoveLargeLogs": true,
-  "RemoveLargeRocks": true
+  "RemoveLargeRocks": true,
+  "RemoveBushes": false // Removes the bushes near the shipping container.
+  "ReportRemovedItemsToConsole": true // Report extra info about what was removed to the console.
 }
 ```
 
@@ -51,3 +44,8 @@ The growth stages are:
 * 5 - Tree
 
 For more information on how to modify the config see [this page](http://canimod.com/guides/using-mods#configuring-mods).
+
+## Console Commands
+* cf_clean - Runs the clean command manually.
+* cf_restore - Restores the items removed from the last clean command that occured this play session.
+* cf_rload - Reloads the mod config so you can change what to remove on the fly.

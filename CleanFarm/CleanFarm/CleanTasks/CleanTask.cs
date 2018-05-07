@@ -36,7 +36,8 @@ namespace CleanFarm.CleanTasks
 
         /// <summary>Restores all removed items for debug purposes.</summary>
         /// <param name="farm">The farm to restore the items to.</param>
-        public abstract void RestoreRemovedItems(Farm farm);
+        /// <returns>The number of items that were restored.</returns>
+        public abstract int RestoreRemovedItems(Farm farm);
 
         /// <summary>Prints to the console all the items that were removed in a nice format. Only runs if the config option is enabled.</summary>
         /// <param name="monitor">The monitor interface to access the log method from.</param>
@@ -44,13 +45,13 @@ namespace CleanFarm.CleanTasks
         {
             if (this.Config.ReportRemovedItemsToConsole)
             {
-                monitor.Log($"Running {this.GetType().Name}...");
+                monitor.Log($"Running {this.GetType().Name}...", LogLevel.Info);
 
                 foreach (var removed in this.RemovedItems)
-                    monitor.Log($"  Removed: {removed.Key} x{removed.Value}");
+                    monitor.Log($"  Removed: {removed.Key} x{removed.Value}", LogLevel.Info);
 
                 if (this.RemovedItems.Count == 0)
-                    monitor.Log("No items to remove.");
+                    monitor.Log("No items to remove.", LogLevel.Info);
 
                 // Clear the items once they have been reported so they aren't reported again.
                 this.RemovedItems.Clear();
@@ -77,10 +78,13 @@ namespace CleanFarm.CleanTasks
                 .Select(item => item)
                 .ToList();
 
-        #if DEBUG
-            // Track items that are removed in debug so we can restore them if needed.
+            if (toRemove.Count == 0)
+            {
+                return;
+            }
+
+            // Track items that are removed so we can restore them if needed.
             this.RemovedItemInstances = toRemove;
-        #endif
 
             // Make sure the list is empty first.
             this.RemovedItems.Clear();
@@ -105,16 +109,19 @@ namespace CleanFarm.CleanTasks
         /// <summary>Adds the removedItemInstances to the nativeCollection.</summary>
         /// <typeparam name="T">The native collection type.</typeparam>
         /// <param name="nativeCollection">The native collection to add the removed items to.</param>
-        protected void RestoreItems<T>(ICollection<T> nativeCollection)
+        /// <returns>The number of items that were restored.</returns>
+        protected int RestoreItems<T>(ICollection<T> nativeCollection)
         {
             if (this.RemovedItemInstances == null)
-                return;
+                return 0;
 
             var collection = (ICollection<T>)this.RemovedItemInstances;
+            int numBeingRestored = collection.Count;
             foreach (var element in collection)
                 nativeCollection.Add(element);
 
             collection.Clear();
+            return numBeingRestored;
         }
     }
 }

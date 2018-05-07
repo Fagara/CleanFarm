@@ -29,7 +29,7 @@ namespace CleanFarm
 
             TimeEvents.AfterDayStarted += OnNewDay;
 
-            InitDebugCommands(helper);
+            InitConsoleCommands(helper);
         }
 
         /// <summary>Creates the clean tasks. This is just it isn't duplicated for the debug command.</summary>
@@ -62,7 +62,7 @@ namespace CleanFarm
                 return;
             }
 
-            this.Monitor.Log("Cleaning up the farm...");
+            this.Monitor.Log("Cleaning up the farm...", LogLevel.Info);
 
             // Run the tasks
             foreach (ICleanTask cleanTask in this.CleanTasks)
@@ -80,52 +80,65 @@ namespace CleanFarm
                 }
             }
 
-            this.Monitor.Log("Cleanup complete!");
+            this.Monitor.Log("Cleanup complete! Use the 'cf_restore' console command to restore the removed items.", LogLevel.Info);
         }
 
         #region DebugCommands
-        private void InitDebugCommands(IModHelper helper)
+        private void InitConsoleCommands(IModHelper helper)
         {
-        #if DEBUG
+#if DEBUG
             // Manually run the clean
             ControlEvents.KeyPressed += (sender, e) =>
             {
                 if (e.KeyPressed == Keys.V)
                     Clean();
             };
+#endif
 
             // Convenience for testing only with command line
             helper.ConsoleCommands.Add("cf_clean", "Manually runs the clean.", (name, args) => Clean());
 
-            helper.ConsoleCommands.Add("cf_restore", "Restores the items removed from the farm.", (sender, e) =>
+            helper.ConsoleCommands.Add("cf_restore", "Restores the items removed from the farm by the last clean command that occured this session.", (sender, e) =>
             {
-                this.Monitor.Log("Restoring removed items", LogLevel.Trace);
+                this.Monitor.Log("Restoring removed items...", LogLevel.Info);
                 if (this.PlayerFarm == null)
                 {
                     this.Monitor.Log("Farm is invalid", LogLevel.Error);
                     return;
                 }
 
+                int itemsRestored = 0;
+                int errorCount = 0;
                 try
                 {
                     foreach (var task in this.CleanTasks)
-                        task.RestoreRemovedItems(this.PlayerFarm);
+                        itemsRestored += task.RestoreRemovedItems(this.PlayerFarm);
                 }
                 catch (Exception ex)
                 {
                     this.Monitor.Log($"Error while trying to restore items: {ex}", LogLevel.Error);
+                    ++errorCount;
                 }
+                this.Monitor.Log($"Finished restoring {itemsRestored} items with {errorCount} errors.", LogLevel.Info);
             });
 
             // Reloads config and re-creates tasks. Used for quickly testing different config settings without restarting.
             helper.ConsoleCommands.Add("cf_reload", "Reloads the config.", (sender, e) =>
             {
-                this.Monitor.Log("Reloading config", LogLevel.Trace);
-                this.Config = helper.ReadConfig<ModConfig>();
-                InitTasks(this.Config);
+                this.Monitor.Log("Reloading CleanFarm config", LogLevel.Info);
+                try
+                {
+                    this.Config = helper.ReadConfig<ModConfig>();
+                    InitTasks(this.Config);
+                }
+                catch (Exception ex)
+                {
+                    this.Monitor.Log($"Failed to reload config: {ex}", LogLevel.Error);
+                    return;
+                }
+                this.Monitor.Log("Config reloaded successfully.", LogLevel.Info);
             });
-        #endif // DEBUG
         }
-        #endregion DebugCommands
+#endregion DebugCommands
     }
 }
