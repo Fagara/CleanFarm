@@ -32,7 +32,7 @@ namespace CleanFarm.CleanTasks
         /// <param name="farm">The farm to restore the items to.</param>
         public override void RestoreRemovedItems(Farm farm)
         {
-            RestoreItems(farm.terrainFeatures);
+            RestoreItems(farm.largeTerrainFeatures);
         }
 
         /// <summary>Gets the human readable name of an item. Used for reporting the item.</summary>
