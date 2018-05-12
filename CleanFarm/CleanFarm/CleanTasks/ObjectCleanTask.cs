@@ -49,6 +49,7 @@ namespace CleanFarm.CleanTasks
         {
             return RestoreItems(
                 farm.objects.Pairs,
+                pair => !farm.objects.ContainsKey(pair.Key),
                 pair => farm.objects.Add(pair.Key, pair.Value));
         }
 

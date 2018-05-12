@@ -123,25 +123,38 @@ namespace CleanFarm.CleanTasks
         /// <summary>Adds the removedItemInstances to the nativeCollection.</summary>
         /// <typeparam name="T">The native collection type.</typeparam>
         /// <param name="nativeCollection">The native collection to add the removed items to.</param>
+        /// <param name="isUnique">A function that checks that the item doesn't already exist in the target array.</param>
         /// <returns>The number of items that were restored.</returns>
-        protected int RestoreItems<T>(ICollection<T> nativeCollection)
+        protected int RestoreItems<T>(ICollection<T> nativeCollection, Func<T, bool> isUnique = null)
         {
-            return RestoreItems((IEnumerable<T>)this.RemovedItemInstances, item => nativeCollection.Add(item));
+            return RestoreItems(
+                (IEnumerable<T>)this.RemovedItemInstances,
+                isUnique != null ? isUnique : item => !nativeCollection.Contains(item),
+                item => nativeCollection.Add(item));
         }
 
         /// <summary>Adds the removedItemInstances to the nativeCollection.</summary>
         /// <typeparam name="T">The native collection type.</typeparam>
         /// <param name="nativeCollection">The native collection to add the removed items to.</param>
+        /// <param name="isUnique">A function that checks that the item doesn't already exist in the target array.</param>
         /// <param name="restoreItemFunc">A function that is given an item to be added back into the target collection.</param>
         /// <returns>The number of items that were restored.</returns>
-        protected int RestoreItems<T>(IEnumerable<T> nativeCollection, Action<T> restoreItemFunc)
+        protected int RestoreItems<T>(IEnumerable<T> nativeCollection, Func<T, bool> isUnique, Action<T> restoreItemFunc)
         {
             if (this.RemovedItemInstances == null)
                 return 0;
 
-            var collection = (List<T>)this.RemovedItemInstances;
-            int numBeingRestored = collection.Count;
-            collection.ForEach(element => restoreItemFunc(element));
+            var collection = (IEnumerable<T>)this.RemovedItemInstances;
+            int numBeingRestored = collection.Count();
+            foreach (var item in collection)
+            {
+                // We only need to check this for multiplayer if both players
+                // try to restore the items. It's fine if they both try but we don't want exceptions caused by dupe keys.
+                if (isUnique(item))
+                {
+                    restoreItemFunc(item);
+                }
+            }
 
             this.RemovedItemInstances = null;
             return numBeingRestored;
