@@ -82,6 +82,12 @@ namespace CleanFarm
         /// <summary>Runs the clean tasks.</summary>
         private void Clean()
         {
+            if (!Context.IsWorldReady)
+            {
+                this.Monitor.Log("You must have a save loaded to run this command.", LogLevel.Info);
+                return;
+            }
+
             if (this.PlayerFarm == null)
             {
                 this.Monitor.Log("Cannot clean farm: farm location is invalid.", LogLevel.Warn);
@@ -111,6 +117,12 @@ namespace CleanFarm
 
         private void Restore()
         {
+            if (!Context.IsWorldReady)
+            {
+                this.Monitor.Log("You must have a save loaded to run this command.", LogLevel.Info);
+                return;
+            }
+
             this.Monitor.Log("Restoring removed items...", LogLevel.Info);
             if (this.PlayerFarm == null)
             {
