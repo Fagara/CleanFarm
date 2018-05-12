@@ -36,11 +36,10 @@ namespace CleanFarm.CleanTasks
         /// <param name="farm">The farm to be cleaned.</param>
         public override void Run(Farm farm)
         {
-            var modifiedPairs = farm.objects.Pairs.ToList();
-            RemoveAndRecordItems(modifiedPairs, pair => pair.Value);
-
-            var removed = farm.objects.Pairs.Except(modifiedPairs).ToList();
-            removed.ForEach(removedPair => farm.objects.Remove(removedPair.Key));
+            RemoveAndRecordItems(
+                farm.objects.Pairs,
+                pair => pair.Value,
+                pair => farm.objects.Remove(pair.Key));
         }
 
         /// <summary>Restores all removed items for debug purposes.</summary>
@@ -48,11 +47,9 @@ namespace CleanFarm.CleanTasks
         /// <returns>The number of items that were restored.</returns>
         public override int RestoreRemovedItems(Farm farm)
         {
-            var objects = farm.objects.Pairs.ToList();
-            int count = RestoreItems(objects);
-            var added = objects.Except(farm.objects.Pairs).ToList();
-            added.ForEach(pair => farm.objects.Add(pair.Key, pair.Value));
-            return count;
+            return RestoreItems(
+                farm.objects.Pairs,
+                pair => farm.objects.Add(pair.Key, pair.Value));
         }
 
         /// <summary>Gets the human readable name of an item. Used for reporting the item.</summary>

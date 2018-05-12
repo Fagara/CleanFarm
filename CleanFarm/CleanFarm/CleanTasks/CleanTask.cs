@@ -72,13 +72,19 @@ namespace CleanFarm.CleanTasks
         /// <param name="extractItemFunc">A method to extract an ItemType from an element of the collection.</param>
         protected void RemoveAndRecordItems<T>(ICollection<T> collection, Func<T, ItemType> extractItemFunc)
         {
-            // Find all the items that should be removed.
-            ICollection<T> toRemove = collection
-                .Where(item => ShouldRemoveItem(extractItemFunc(item)))
-                .Select(item => item)
-                .ToList();
+            RemoveAndRecordItems(collection, extractItemFunc, item => collection.Remove(item));
+        }
 
-            if (toRemove.Count == 0)
+        /// <summary>Collects, removes and tracks items from a native collection.</summary>
+        /// <typeparam name="T">The type of the collection. The collection may be a dictionary in which case it would not match ItemType.</typeparam>
+        /// <param name="collection">The collection to remove items from.</param>
+        /// <param name="extractItemFunc">A method to extract an ItemType from an element of the collection.</param>
+        /// <param name="removeFunc">A function that whene given an item of type T, removes it from the target collection.</param>
+        protected void RemoveAndRecordItems<T>(IEnumerable<T> collection, Func<T, ItemType> extractItemFunc, Action<T> removeFunc)
+        {
+            // Find all the items that should be removed.
+            List<T> toRemove = collection.Where(item => ShouldRemoveItem(extractItemFunc(item))).ToList();
+            if (toRemove.Count() == 0)
             {
                 return;
             }
@@ -89,7 +95,7 @@ namespace CleanFarm.CleanTasks
             // Make sure the list is empty first.
             this.RemovedItems.Clear();
 
-            foreach (var item in toRemove)
+            void RunOnItem(T item)
             {
                 if (this.Config.ReportRemovedItemsToConsole)
                 {
@@ -102,8 +108,10 @@ namespace CleanFarm.CleanTasks
                 }
 
                 // Remove the item from the native collection.
-                collection.Remove(item);
+                removeFunc(item);
             }
+
+            toRemove.ForEach(item => RunOnItem(item));
         }
 
         /// <summary>Adds the removedItemInstances to the nativeCollection.</summary>
@@ -112,15 +120,24 @@ namespace CleanFarm.CleanTasks
         /// <returns>The number of items that were restored.</returns>
         protected int RestoreItems<T>(ICollection<T> nativeCollection)
         {
+            return RestoreItems((IEnumerable<T>)this.RemovedItemInstances, item => nativeCollection.Add(item));
+        }
+
+        /// <summary>Adds the removedItemInstances to the nativeCollection.</summary>
+        /// <typeparam name="T">The native collection type.</typeparam>
+        /// <param name="nativeCollection">The native collection to add the removed items to.</param>
+        /// <param name="restoreItemFunc">A function that is given an item to be added back into the target collection.</param>
+        /// <returns>The number of items that were restored.</returns>
+        protected int RestoreItems<T>(IEnumerable<T> nativeCollection, Action<T> restoreItemFunc)
+        {
             if (this.RemovedItemInstances == null)
                 return 0;
 
-            var collection = (ICollection<T>)this.RemovedItemInstances;
+            var collection = (List<T>)this.RemovedItemInstances;
             int numBeingRestored = collection.Count;
-            foreach (var element in collection)
-                nativeCollection.Add(element);
+            collection.ForEach(element => restoreItemFunc(element));
 
-            collection.Clear();
+            this.RemovedItemInstances = null;
             return numBeingRestored;
         }
     }
