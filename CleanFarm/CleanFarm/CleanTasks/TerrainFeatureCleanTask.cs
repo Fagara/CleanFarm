@@ -2,6 +2,7 @@
 using StardewValley;
 using StardewValley.TerrainFeatures;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CleanFarm.CleanTasks
 {
@@ -34,7 +35,11 @@ namespace CleanFarm.CleanTasks
         /// <param name="farm">The farm to be cleaned.</param>
         public override void Run(Farm farm)
         {
-            RemoveAndRecordItems(farm.terrainFeatures, pair => pair.Value);
+            var terrainFeatures = farm.terrainFeatures.Pairs.ToList();
+            RemoveAndRecordItems(terrainFeatures, pair => pair.Value);
+
+            var removed = farm.terrainFeatures.Pairs.Except(terrainFeatures).ToList();
+            removed.ForEach(pair => farm.terrainFeatures.Remove(pair.Key));
         }
 
         /// <summary>Restores all removed items for debug purposes.</summary>
@@ -42,7 +47,11 @@ namespace CleanFarm.CleanTasks
         /// <returns>The number of items that were restored.</returns>
         public override int RestoreRemovedItems(Farm farm)
         {
-            return RestoreItems(farm.terrainFeatures);
+            var terrainFeatures = farm.terrainFeatures.Pairs.ToList();
+            int count = RestoreItems(terrainFeatures);
+            var added = terrainFeatures.Except(farm.terrainFeatures.Pairs).ToList();
+            added.ForEach(pair => farm.terrainFeatures.Add(pair.Key, pair.Value));
+            return count;
         }
 
         /// <summary>Gets the human readable name of an item. Used for reporting the item.</summary>
@@ -52,12 +61,12 @@ namespace CleanFarm.CleanTasks
             if (item is Tree)
             {
                 var tree = item as Tree;
-                if (tree.stump)
+                if (tree.stump.Value)
                     return "Tree Stump";
 
                 // Use the name of the growth stage if valid.
-                return tree.growthStage >= 0 && tree.growthStage < this.GrowthStageNames.Count 
-                    ? this.GrowthStageNames[tree.growthStage] 
+                return tree.growthStage.Value >= 0 && tree.growthStage.Value < this.GrowthStageNames.Count 
+                    ? this.GrowthStageNames[tree.growthStage.Value] 
                     : "Tree";
             }
 
@@ -75,8 +84,8 @@ namespace CleanFarm.CleanTasks
             if (item is Tree)
             {
                 var tree = item as Tree;
-                return ((this.Config.RemoveSaplings && tree.growthStage < this.MaxGrowthStage) ||
-                        (this.Config.RemoveStumps && tree.stump));
+                return ((this.Config.RemoveSaplings && tree.growthStage.Value < this.MaxGrowthStage) ||
+                        (this.Config.RemoveStumps && tree.stump.Value));
             }
             return (item is Grass && this.Config.RemoveGrass);
         }
