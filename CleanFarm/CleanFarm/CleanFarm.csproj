@@ -53,6 +53,8 @@
     <Compile Include="CleanTasks\ObjectCleanTask.cs" />
     <Compile Include="CleanTasks\ResourceClumpCleanTask.cs" />
     <Compile Include="CleanTasks\TerrainFeatureCleanTask.cs" />
+    <Compile Include="Commands\Command.cs" />
+    <Compile Include="Commands\ICommand.cs" />
     <Compile Include="ModConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

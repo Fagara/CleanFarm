@@ -27,6 +27,12 @@ namespace CleanFarm.CleanTasks
             this.RemovedItems = new Dictionary<string, int>();
         }
 
+        /// <summary>Update the internal config.</summary>
+        public void UpdateConfig(ModConfig config)
+        {
+            this.Config = config;
+        }
+
         /// <summary>Can this task be run. Usually checks the config settings to see if it's enabled.</summary>
         public abstract bool CanRun();
 

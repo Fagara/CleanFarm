@@ -20,6 +20,8 @@ namespace CleanFarm
         /// <summary>Gets the farm location.</summary>
         private Farm PlayerFarm => Game1.locations.First(loc => loc is Farm) as Farm;
 
+        /// <summary>The commands to execute during tick. We do this to prevent modifying the collections while they're being used by the game (ie. draw).</summary>
+        private Queue<ICommand> CommandQueue;
 
         /// <summary>Mod entry point.</summary>
         /// <param name="helper">Mod helper interface.</param>
@@ -27,6 +29,8 @@ namespace CleanFarm
         {
             this.Config = helper.ReadConfig<ModConfig>();
             InitTasks(this.Config);
+
+            this.CommandQueue = new Queue<ICommand>();
 
             TimeEvents.AfterDayStarted += OnNewDay;
 
@@ -46,11 +50,32 @@ namespace CleanFarm
             };
         }
 
+        private void QueueCommand(ICommand command)
+        {
+            this.CommandQueue.Enqueue(command);
+            // Ensure we only subscribe once.
+            if (this.CommandQueue.Count == 1)
+            {
+                GameEvents.UpdateTick += GameEvents_UpdateTick;
+            }
+        }
+
+        private void GameEvents_UpdateTick(object sender, EventArgs e)
+        {
+            this.Monitor.Log($"Processing {this.CommandQueue.Count} commands");
+            while (this.CommandQueue.Count > 0)
+            {
+                this.CommandQueue.Dequeue().Execute();
+            }
+            GameEvents.UpdateTick -= GameEvents_UpdateTick;
+        }
+
         /// <summary>Callback for the OnNewDay event. Runs the clean once the day has finished transitioning.</summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void OnNewDay(object sender, EventArgs e)
         {
+            // No need to queue this one since this event is raised during update.
             Clean();
         }
 
@@ -84,6 +109,50 @@ namespace CleanFarm
             this.Monitor.Log("Cleanup complete! Use the 'cf_restore' console command to restore the removed items.", LogLevel.Info);
         }
 
+        private void Restore()
+        {
+            this.Monitor.Log("Restoring removed items...", LogLevel.Info);
+            if (this.PlayerFarm == null)
+            {
+                this.Monitor.Log("Farm is invalid", LogLevel.Error);
+                return;
+            }
+
+            int itemsRestored = 0;
+            int errorCount = 0;
+            try
+            {
+                foreach (var task in this.CleanTasks)
+                    itemsRestored += task.RestoreRemovedItems(this.PlayerFarm);
+            }
+            catch (Exception ex)
+            {
+                this.Monitor.Log($"Error while trying to restore items: {ex}", LogLevel.Error);
+                ++errorCount;
+            }
+            this.Monitor.Log($"Finished restoring {itemsRestored} items with {errorCount} errors.", LogLevel.Info);
+        }
+
+        private void ReloadConfig(IModHelper helper)
+        {
+            this.Monitor.Log("Reloading CleanFarm config", LogLevel.Info);
+            try
+            {
+                // Don't re-create the tasks or we'll lose any removed item data, preventing us from restoring it.
+                this.Config = helper.ReadConfig<ModConfig>();
+                foreach (ICleanTask cleanTask in this.CleanTasks)
+                {
+                    cleanTask.UpdateConfig(this.Config);
+                }
+            }
+            catch (Exception ex)
+            {
+                this.Monitor.Log($"Failed to reload config: {ex}", LogLevel.Error);
+                return;
+            }
+            this.Monitor.Log("Config reloaded successfully.", LogLevel.Info);
+        }
+
         #region DebugCommands
         private void InitConsoleCommands(IModHelper helper)
         {
@@ -92,52 +161,25 @@ namespace CleanFarm
             ControlEvents.KeyPressed += (sender, e) =>
             {
                 if (e.KeyPressed == Keys.V)
-                    Clean();
+                    QueueCommand(new Command(() => Clean()));
             };
 #endif
 
             // Convenience for testing only with command line
-            helper.ConsoleCommands.Add("cf_clean", "Manually runs the clean.", (name, args) => Clean());
+            helper.ConsoleCommands.Add("cf_clean", "Manually runs the clean.", (name, args) =>
+            {
+                QueueCommand(new Command(() => Clean()));
+            });
 
             helper.ConsoleCommands.Add("cf_restore", "Restores the items removed from the farm by the last clean command that occured this session.", (sender, e) =>
             {
-                this.Monitor.Log("Restoring removed items...", LogLevel.Info);
-                if (this.PlayerFarm == null)
-                {
-                    this.Monitor.Log("Farm is invalid", LogLevel.Error);
-                    return;
-                }
-
-                int itemsRestored = 0;
-                int errorCount = 0;
-                try
-                {
-                    foreach (var task in this.CleanTasks)
-                        itemsRestored += task.RestoreRemovedItems(this.PlayerFarm);
-                }
-                catch (Exception ex)
-                {
-                    this.Monitor.Log($"Error while trying to restore items: {ex}", LogLevel.Error);
-                    ++errorCount;
-                }
-                this.Monitor.Log($"Finished restoring {itemsRestored} items with {errorCount} errors.", LogLevel.Info);
+                QueueCommand(new Command(() => Restore()));
             });
 
             // Reloads config and re-creates tasks. Used for quickly testing different config settings without restarting.
             helper.ConsoleCommands.Add("cf_reload", "Reloads the config.", (sender, e) =>
             {
-                this.Monitor.Log("Reloading CleanFarm config", LogLevel.Info);
-                try
-                {
-                    this.Config = helper.ReadConfig<ModConfig>();
-                    InitTasks(this.Config);
-                }
-                catch (Exception ex)
-                {
-                    this.Monitor.Log($"Failed to reload config: {ex}", LogLevel.Error);
-                    return;
-                }
-                this.Monitor.Log("Config reloaded successfully.", LogLevel.Info);
+                QueueCommand(new Command(() => ReloadConfig(helper)));
             });
         }
 #endregion DebugCommands
