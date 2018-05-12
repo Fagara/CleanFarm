@@ -39,10 +39,10 @@ namespace CleanFarm.CleanTasks
         /// <param name="item">The item whose name to get.</param>
         protected override string GetItemName(ResourceClump item)
         {
-            if (item.parentSheetIndex == ResourceClump.boulderIndex)    return "Boulder";
-            if (item.parentSheetIndex == ResourceClump.hollowLogIndex)  return "Hollow Log";
-            if (item.parentSheetIndex == ResourceClump.stumpIndex)      return "Large Stump";
-            if (item.parentSheetIndex == ResourceClump.meteoriteIndex)  return "Meteorite";
+            if (item.parentSheetIndex.Value == ResourceClump.boulderIndex)    return "Boulder";
+            if (item.parentSheetIndex.Value == ResourceClump.hollowLogIndex)  return "Hollow Log";
+            if (item.parentSheetIndex.Value == ResourceClump.stumpIndex)      return "Large Stump";
+            if (item.parentSheetIndex.Value == ResourceClump.meteoriteIndex)  return "Meteorite";
             return item.GetType().ToString();
         }
 
@@ -50,7 +50,7 @@ namespace CleanFarm.CleanTasks
         /// <param name="item">The item in question.</param>
         protected override bool ShouldRemoveItem(ResourceClump item)
         {
-            int type = item.parentSheetIndex;
+            int type = item.parentSheetIndex.Value;
             return ((this.Config.RemoveLargeRocks && type == ResourceClump.boulderIndex) ||
                      this.Config.RemoveLargeLogs && (type == ResourceClump.hollowLogIndex || type == ResourceClump.stumpIndex));
         }

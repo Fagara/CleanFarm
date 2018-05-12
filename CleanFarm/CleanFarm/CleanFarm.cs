@@ -5,6 +5,7 @@ using StardewValley;
 using Microsoft.Xna.Framework.Input;
 using CleanFarm.CleanTasks;
 using System;
+using System.Linq;
 
 namespace CleanFarm
 {
@@ -17,7 +18,7 @@ namespace CleanFarm
         private List<ICleanTask> CleanTasks;
 
         /// <summary>Gets the farm location.</summary>
-        private Farm PlayerFarm => Game1.locations.Find(loc => loc is Farm) as Farm;
+        private Farm PlayerFarm => Game1.locations.First(loc => loc is Farm) as Farm;
 
 
         /// <summary>Mod entry point.</summary>
