@@ -1,5 +1,10 @@
 # Release Notes
 
+### 1.4
+* Fixed deprecation warnings (SMAPI 3.0 compatibility).
+* Fixed an issue where some items wouldn't be removed correctly after reloading your config.
+* Minor refactoring and cleanup.
+
 ### 1.3-beta
 * Add compatibility for SDV 1.3 beta.
 * Fixed occasional exceptions when running clean/restore console commands.
