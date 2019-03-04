@@ -11,8 +11,7 @@ namespace CleanFarm.CleanTasks
     class ObjectCleanTask : CleanTask<SDVObject>
     {
         /// <summary>The names of the objects that should be removed, populated from config settings.</summary>
-        private List<string> ObjectsToRemove;
-
+        private readonly IList<string> ObjectsToRemove;
 
         /// <summary>Creats an instance of the clean task.</summary>
         /// <param name="config">The config object for this mod.</param>

@@ -10,10 +10,10 @@ namespace CleanFarm.CleanTasks
     class TerrainFeatureCleanTask : CleanTask<TerrainFeature>
     {
         /// <summary>The max growth stage of trees to allow. All trees below this stage are removed.</summary>
-        private int MaxGrowthStage = Tree.saplingStage;
+        private readonly int MaxGrowthStage = Tree.saplingStage;
 
         /// <summary>The names of the growth stages indexed by the growth stage. Used to lookup the tree name.</summary>
-        private List<string> GrowthStageNames;
+        private readonly IList<string> GrowthStageNames;
 
         /// <summary>Creats an instance of the clean task.</summary>
         /// <param name="config">The config object for this mod.</param>

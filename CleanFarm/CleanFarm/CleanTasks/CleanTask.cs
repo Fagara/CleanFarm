@@ -14,9 +14,9 @@ namespace CleanFarm.CleanTasks
         protected ModConfig Config { get; private set; }
 
         /// <summary>The items that have been removed by this task when Run is called. Maps GetItemName to the number of instances that were removed.</summary>
-        protected Dictionary<string, int> RemovedItems { get; private set; }
+        protected Dictionary<string, int> RemovedItemCounts { get; private set; }
 
-        /// <summary>The instances of the removed items. Used for restoring for debug purposes.</summary>
+        /// <summary>The instances of the removed items. Used for restoring removed items.</summary>
         protected object RemovedItemInstances { get; private set; }
 
         /// <summary>Creats an instance of the clean task.</summary>
@@ -24,7 +24,7 @@ namespace CleanFarm.CleanTasks
         public CleanTask(ModConfig config)
         {
             this.Config = config;
-            this.RemovedItems = new Dictionary<string, int>();
+            this.RemovedItemCounts = new Dictionary<string, int>();
         }
 
         /// <summary>Update the internal config.</summary>
@@ -53,14 +53,14 @@ namespace CleanFarm.CleanTasks
             {
                 monitor.Log($"Running {this.GetType().Name}...", LogLevel.Info);
 
-                foreach (var removed in this.RemovedItems)
+                foreach (var removed in this.RemovedItemCounts)
                     monitor.Log($"  Removed: {removed.Key} x{removed.Value}", LogLevel.Info);
 
-                if (this.RemovedItems.Count == 0)
+                if (this.RemovedItemCounts.Count == 0)
                     monitor.Log("No items to remove.", LogLevel.Info);
 
                 // Clear the items once they have been reported so they aren't reported again.
-                this.RemovedItems.Clear();
+                this.RemovedItemCounts.Clear();
             }
         }
 
@@ -99,7 +99,7 @@ namespace CleanFarm.CleanTasks
             this.RemovedItemInstances = toRemove;
 
             // Make sure the list is empty first.
-            this.RemovedItems.Clear();
+            this.RemovedItemCounts.Clear();
 
             void RunOnItem(T item)
             {
@@ -108,8 +108,8 @@ namespace CleanFarm.CleanTasks
                     // Track each item that is removed, incrementing the count each time an item with a matching name is found.
                     ItemType extracted = extractItemFunc(item);
                     var itemName = GetItemName(extracted);
-                    this.RemovedItems[itemName] = this.RemovedItems.ContainsKey(itemName)
-                        ? this.RemovedItems[itemName] + 1
+                    this.RemovedItemCounts[itemName] = this.RemovedItemCounts.ContainsKey(itemName)
+                        ? this.RemovedItemCounts[itemName] + 1
                         : 1;
                 }
 

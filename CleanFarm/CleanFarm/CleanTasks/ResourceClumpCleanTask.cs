@@ -7,17 +7,27 @@ namespace CleanFarm.CleanTasks
     /// <summary>CleanTask for cleaning ResourceClumps on the farm (Boulders, stumps, large logs).</summary>
     class ResourceClumpCleanTask : CleanTask<ResourceClump>
     {
+        /// <summary>Names for the corresponding clump indices.</summary>
+        private readonly IDictionary<int, string> ClumpNames;
+
         /// <summary>Creats an instance of the clean task.</summary>
         /// <param name="config">The config object for this mod.</param>
         public ResourceClumpCleanTask(ModConfig config)
             : base(config)
         {
+            this.ClumpNames = new Dictionary<int, string>
+            {
+                { ResourceClump.boulderIndex, "Boulder" },
+                { ResourceClump.hollowLogIndex, "Hollow Log" },
+                { ResourceClump.stumpIndex, "Large Stump" },
+                { ResourceClump.meteoriteIndex, "Meteorite" },
+            };
         }
 
         /// <summary>Can this task be run. Usually checks the config settings to see if it's enabled.</summary>
         public override bool CanRun()
         {
-            return this.Config.RemoveLargeLogs || this.Config.RemoveLargeRocks;
+            return (this.Config.RemoveLargeLogs || this.Config.RemoveLargeRocks);
         }
 
         /// <summary>Runs the clean task.</summary>
@@ -39,10 +49,10 @@ namespace CleanFarm.CleanTasks
         /// <param name="item">The item whose name to get.</param>
         protected override string GetItemName(ResourceClump item)
         {
-            if (item.parentSheetIndex.Value == ResourceClump.boulderIndex)    return "Boulder";
-            if (item.parentSheetIndex.Value == ResourceClump.hollowLogIndex)  return "Hollow Log";
-            if (item.parentSheetIndex.Value == ResourceClump.stumpIndex)      return "Large Stump";
-            if (item.parentSheetIndex.Value == ResourceClump.meteoriteIndex)  return "Meteorite";
+            if (this.ClumpNames.ContainsKey(item.parentSheetIndex.Value))
+            {
+                return this.ClumpNames[item.parentSheetIndex.Value];
+            }
             return item.GetType().ToString();
         }
 

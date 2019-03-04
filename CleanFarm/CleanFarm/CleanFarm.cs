@@ -152,10 +152,7 @@ namespace CleanFarm
             {
                 // Don't re-create the tasks or we'll lose any removed item data, preventing us from restoring it.
                 this.Config = helper.ReadConfig<ModConfig>();
-                foreach (ICleanTask cleanTask in this.CleanTasks)
-                {
-                    cleanTask.UpdateConfig(this.Config);
-                }
+                InitTasks(this.Config);
             }
             catch (Exception ex)
             {
@@ -177,7 +174,6 @@ namespace CleanFarm
             };
 #endif
 
-            // Convenience for testing only with command line
             helper.ConsoleCommands.Add("cf_clean", "Manually runs the clean.", (name, args) =>
             {
                 QueueCommand(new Command(() => Clean()));
