@@ -32,7 +32,7 @@ namespace CleanFarm
 
             this.CommandQueue = new Queue<ICommand>();
 
-            TimeEvents.AfterDayStarted += OnNewDay;
+            helper.Events.GameLoop.DayStarted += OnNewDay;
 
             InitConsoleCommands(helper);
         }
@@ -56,7 +56,7 @@ namespace CleanFarm
             // Ensure we only subscribe once.
             if (this.CommandQueue.Count == 1)
             {
-                GameEvents.UpdateTick += GameEvents_UpdateTick;
+                this.Helper.Events.GameLoop.UpdateTicked += GameEvents_UpdateTick;
             }
         }
 
@@ -67,7 +67,7 @@ namespace CleanFarm
             {
                 this.CommandQueue.Dequeue().Execute();
             }
-            GameEvents.UpdateTick -= GameEvents_UpdateTick;
+            this.Helper.Events.GameLoop.UpdateTicked -= GameEvents_UpdateTick;
         }
 
         /// <summary>Callback for the OnNewDay event. Runs the clean once the day has finished transitioning.</summary>
@@ -170,9 +170,9 @@ namespace CleanFarm
         {
 #if DEBUG
             // Manually run the clean
-            ControlEvents.KeyPressed += (sender, e) =>
+            helper.Events.Input.ButtonPressed += (sender, e) =>
             {
-                if (e.KeyPressed == Keys.V)
+                if (e.Button == SButton.V)
                     QueueCommand(new Command(() => Clean()));
             };
 #endif
